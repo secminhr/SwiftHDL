@@ -18,10 +18,18 @@ open class Chip {
     }
 }
 
-
+#if swift(>=5.4)
 @resultBuilder
 public struct ConnectionBuilder {
     public static func buildBlock(_ cancellables: AnyCancellable...) -> [AnyCancellable] {
         return cancellables
     }
 }
+#else
+@_functionBuilder
+public struct ConnectionBuilder {
+    public static func buildBlock(_ cancellables: AnyCancellable...) -> [AnyCancellable] {
+        return cancellables
+    }
+}
+#endif
