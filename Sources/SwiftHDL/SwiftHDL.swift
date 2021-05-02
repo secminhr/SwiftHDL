@@ -1,6 +1,8 @@
 import Combine
 import Foundation
 
+public typealias Bit = Bool
+
 public class Chip {
     var cancellables: [AnyCancellable] = []
     public init() {
@@ -83,18 +85,12 @@ public class Nand: Chip {
     private func connection() -> AnyCancellable {
         Publishers.CombineLatest($inA.subject, $inB.subject)
             .map { (a, b) -> Bit in
-                return a == .one && b == .one ? .zero : .one
+                return !(a && b)
             }.sink {
                 self.out = $0
             }
     }
 }
-
-public enum Bit: Int {
-    case zero = 0
-    case one = 1
-}
-
 
 
 
@@ -133,7 +129,7 @@ public class Output {
     fileprivate let subject: CurrentValueSubject<Bit, Never>
     
     public convenience init () {
-        self.init(wrappedValue: Bit.zero)
+        self.init(wrappedValue: false)
     }
     
     public init(wrappedValue: Bit) {
@@ -172,7 +168,7 @@ public class Output {
     }
 }
 
-@_functionBuilder
+@resultBuilder
 struct ConnectionBuilder {
     static func buildBlock(_ cancellables: AnyCancellable...) -> [AnyCancellable] {
         return cancellables

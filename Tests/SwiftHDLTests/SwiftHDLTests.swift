@@ -6,43 +6,43 @@ final class SwiftHDLTests: XCTestCase {
     func testAnd() {
         let and = And()
 
-        and.inA = .zero
-        and.inB = .zero
-        assert(and.out == .zero)
+        and.inA = false
+        and.inB = false
+        XCTAssertFalse(and.out)
 
-        and.inB = .one
-        assert(and.out == .zero)
+        and.inB = true
+        XCTAssertFalse(and.out)
 
-        and.inA = .one
-        and.inB = .zero
-        assert(and.out == .zero)
+        and.inA = true
+        and.inB = false
+        XCTAssertFalse(and.out)
 
-        and.inB = .one
-        assert(and.out == .one)
+        and.inB = true
+        XCTAssertTrue(and.out)
     }
 
     func testNot() {
         let not = Not()
-        not.input = .zero
-        assert(not.output == .one)
+        not.input = false
+        XCTAssertTrue(not.output)
 
-        not.input = .one
-        assert(not.output == .zero)
+        not.input = true
+        XCTAssertFalse(not.output)
     }
 
     func testNand() {
         let nand = Nand()
-        nand.inA = .zero
-        nand.inB = .zero
-        assert(nand.out == .one)
+        nand.inA = false
+        nand.inB = false
+        XCTAssertTrue(nand.out)
 
-        nand.inB = .one
-        assert(nand.out == .one)
+        nand.inB = true
+        XCTAssertTrue(nand.out)
 
-        nand.inA = .one
-        assert(nand.out == .zero)
+        nand.inA = true
+        XCTAssertFalse(nand.out)
 
-        nand.inB = .zero
-        assert(nand.out == .one)
+        nand.inB = false
+        XCTAssertTrue(nand.out)
     }
 }
