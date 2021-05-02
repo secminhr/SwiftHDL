@@ -3,15 +3,19 @@ import Foundation
 
 public typealias Bit = Bool
 
-public class Chip {
+open class Chip {
     var cancellables: [AnyCancellable] = []
     public init() {
         create()
     }
-    func create() {}
+    open func create() {}
     
-    func connections(@ConnectionBuilder _ connect: () -> [AnyCancellable]) {
-        cancellables = connect()
+    public func connections(@ConnectionBuilder _ connect: () -> [AnyCancellable]) {
+        store(connect)
+    }
+    
+    func store(@ConnectionBuilder _ connections: () -> [AnyCancellable]) {
+        cancellables += connections()
     }
 }
 
@@ -24,20 +28,13 @@ public class And: Chip {
         super.init()
     }
     
-    var nand = Nand()
-    let not = Not()
-    
-    override func create() {
-//        nand = Nand($inA, $inB)
+    var nand: Nand!
+    var not: Not!
+    public override func create() {
         connections {
-            $inA ~> nand.$inA
-            $inB ~> nand.$inB
-            nand.$out ~> not.$input
-            not.$output ~> $out
-//            $inA.send(nand.$inA, onSend: { print("And.inA send to nand.inA") })
-//            $inB.send(nand.$inB, onSend: { print("And.inB send to nand.inB") })
-//            nand.$out.send(not.$input, onSend: { print("nand.out send to not.input: \($0)") })
-//            not.$output.send($out, onSend: { print("not.output send to And.out: \($0)") })
+            $inA.subject.combineLatest($inB.subject)
+                .map { (a, b) in a && b }
+                .assign(to: \.out, on: self)
         }
     }
 }
@@ -50,12 +47,17 @@ public class Not: Chip {
         super.init()
     }
     
-    let nand = Nand()
-    override func create() {
+    public init(_ input: Output) {
+        super.init()
+        store {
+            input ~> self.$input
+        }
+    }
+    
+    var nand: Nand!
+    public override func create() {
         connections {
-            $input ~> nand.$inA
-            $input ~> nand.$inB
-            nand.$out ~> $output
+            $input.subject.map { !$0 }.assign(to: \.output, on: self)
         }
     }
 }
@@ -66,32 +68,26 @@ public class Nand: Chip {
     @Input public var inB: Bit
     @Output public var out: Bit
     
-    private var cancellable: [AnyCancellable] = []
-    
     public init(_ inA: Input, _ inB: Input) {
         super.init()
-        cancellable += [
-            inA.send(self.$inA, onSend: { print("construct inA send to Nand.inA: \($0)") }),
-            inB.send(self.$inB, onSend: { print("construct inB send to Nand.inB: \($0)") })
-        ]
-        cancellable.append(connection())
+        store {
+            inA ~> self.$inA
+            inB ~> self.$inB
+        }
     }
     
     override public init() {
         super.init()
-        cancellable.append(connection())
     }
     
-    private func connection() -> AnyCancellable {
-        Publishers.CombineLatest($inA.subject, $inB.subject)
-            .map { (a, b) -> Bit in
-                return !(a && b)
-            }.sink {
-                self.out = $0
-            }
+    public override func create() {
+        connections {
+            $inA.subject.combineLatest($inB.subject)
+                .map { (a, b) -> Bit in !(a && b) }
+                .assign(to: \.out, on: self)
+        }
     }
 }
-
 
 
 @propertyWrapper
@@ -111,7 +107,7 @@ public class Input {
         return self
     }
     
-    static func ~> (left: Input, right: Input) -> AnyCancellable {
+    public static func ~> (left: Input, right: Input) -> AnyCancellable {
         left.subject.sink(receiveValue: right.subject.send)
     }
     
@@ -145,11 +141,11 @@ public class Output {
         return self
     }
     
-    static func ~> (left: Output, right: Output) -> AnyCancellable {
+    public static func ~> (left: Output, right: Output) -> AnyCancellable {
         left.subject.sink(receiveValue: right.subject.send)
     }
     
-    static func ~> (left: Output, right: Input) -> AnyCancellable {
+    public static func ~> (left: Output, right: Input) -> AnyCancellable {
         left.subject.sink(receiveValue: right.subject.send)
     }
     
@@ -169,8 +165,8 @@ public class Output {
 }
 
 @resultBuilder
-struct ConnectionBuilder {
-    static func buildBlock(_ cancellables: AnyCancellable...) -> [AnyCancellable] {
+public struct ConnectionBuilder {
+    public static func buildBlock(_ cancellables: AnyCancellable...) -> [AnyCancellable] {
         return cancellables
     }
 }
