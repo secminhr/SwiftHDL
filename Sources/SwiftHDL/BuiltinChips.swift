@@ -1,19 +1,41 @@
-public class And: Chip {
-    @Input public var inA: Bit
-    @Input public var inB: Bit
+public class Or: Chip {
+    @Input public var a: Bit
+    @Input public var b: Bit
     @Output public var out: Bit
     
-    public convenience init<WA: Wire, WB: Wire>(_ inA: WA, _ inB: WB) {
+    public convenience init<WA: Wire, WB: Wire>(a: WA, b: WB) {
         self.init()
         store {
-            inA ~> self.$inA
-            inB ~> self.$inB
+            a ~> self.$a
+            b ~> self.$b
         }
     }
     
     public override func create() {
         connections {
-            $inA.subject.combineLatest($inB.subject)
+            $a.subject.combineLatest($b.subject)
+                .map { (a, b) in a || b }
+                .assign(to: \.out, on: self)
+        }
+    }
+}
+
+public class And: Chip {
+    @Input public var a: Bit
+    @Input public var b: Bit
+    @Output public var out: Bit
+    
+    public convenience init<WA: Wire, WB: Wire>(a: WA, b: WB) {
+        self.init()
+        store {
+            a ~> self.$a
+            b ~> self.$b
+        }
+    }
+    
+    public override func create() {
+        connections {
+            $a.subject.combineLatest($b.subject)
                 .map { (a, b) in a && b }
                 .assign(to: \.out, on: self)
         }
@@ -21,40 +43,40 @@ public class And: Chip {
 }
 
 public class Not: Chip {
-    @Input public var input: Bit
-    @Output public var output: Bit
+    @Input public var `in`: Bit
+    @Output public var out: Bit
 
-    public convenience init<W: Wire>(_ input: W) {
+    public convenience init<W: Wire>(in: W) {
         self.init()
         store {
-            input ~> self.$input
+            `in` ~> self.$in
         }
     }
     
     public override func create() {
         connections {
-            $input.subject.map { !$0 }.assign(to: \.output, on: self)
+            $in.subject.map { !$0 }.assign(to: \.out, on: self)
         }
     }
 }
 
 
 public class Nand: Chip {
-    @Input public var inA: Bit
-    @Input public var inB: Bit
+    @Input public var a: Bit
+    @Input public var b: Bit
     @Output public var out: Bit
     
-    public convenience init<W1: Wire, W2: Wire>(_ inA: W1, _ inB: W2) {
+    public convenience init<W1: Wire, W2: Wire>(a: W1, b: W2) {
         self.init()
         store {
-            inA ~> self.$inA
-            inB ~> self.$inB
+            a ~> self.$a
+            b ~> self.$b
         }
     }
     
     public override func create() {
         connections {
-            $inA.subject.combineLatest($inB.subject)
+            $a.subject.combineLatest($b.subject)
                 .map { (a, b) in !(a && b) }
                 .assign(to: \.out, on: self)
         }

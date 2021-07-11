@@ -46,6 +46,7 @@ public class Input: Wire {
     public var projectedValue: Input { self }
 }
 
+
 @propertyWrapper
 public class Output: Wire {
     

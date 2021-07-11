@@ -6,7 +6,7 @@ final class SwiftHDLTests: XCTestCase {
     @Input var andInA: Bit
     @Input var andInB: Bit
     func testAnd() {
-        let and = And($andInA, $andInB)
+        let and = And(a: $andInA, b: $andInB)
 
         andInA = false
         andInB = false
@@ -25,18 +25,18 @@ final class SwiftHDLTests: XCTestCase {
 
     @Input var notIn: Bit
     func testNot() {
-        let not = Not($notIn)
+        let not = Not(in: $notIn)
         notIn = false
-        XCTAssertTrue(not.output)
+        XCTAssertTrue(not.out)
 
         notIn = true
-        XCTAssertFalse(not.output)
+        XCTAssertFalse(not.out)
     }
 
     @Input var nandInA: Bit
     @Input var nandInB: Bit
     func testNand() {
-        let nand = Nand($nandInA, $nandInB)
+        let nand = Nand(a: $nandInA, b: $nandInB)
         nandInA = false
         nandInB = false
         XCTAssertTrue(nand.out)
